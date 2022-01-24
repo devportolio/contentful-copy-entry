@@ -1,5 +1,5 @@
 # compiled output
-/dist
+#/dist
 /node_modules
 
 # Logs
@@ -36,3 +36,5 @@ lerna-debug.log*
 
 # Export excludes
 exports/*
+
+.vercel
