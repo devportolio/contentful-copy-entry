@@ -8,15 +8,6 @@ export class CopyEntryController {
 
   @Post()
   async copy(@Body() copyEntryDto: CopyEntryDto): Promise<boolean> {
-    // Check if there's on going copy process
-    const { total } = await this.copyEntryService.checkCopyUpdate(
-      copyEntryDto.import.entryId,
-    );
-
-    if (total > 0) {
-      return false;
-    }
-
     return await this.copyEntryService.performCopy(copyEntryDto);
   }
 

@@ -1,5 +1,5 @@
 # compiled output
-#/dist
+/dist
 /node_modules
 
 # Logs
@@ -36,5 +36,6 @@ lerna-debug.log*
 
 # Export excludes
 exports/*
+contentful-import-error-log-*
+db.sqlite
 
-.vercel

@@ -21,7 +21,6 @@ export class CopyEntryService {
 
       for (const id of exportedIds) {
         await this.importContent({ ...copyEntryDto.import, entryId: id });
-        await this.updateCopyEntry({ entryId: id }, { imported: true });
       }
 
       //await Entry.update({  batchDone: true }, { where: { parentId: req.body.import.entryId } })
@@ -51,7 +50,7 @@ export class CopyEntryService {
 
         if (Array.isArray(daKey)) {
           daKey.forEach((item) => {
-            if ('sys' in item) {
+            if (typeof item === 'object' && 'sys' in item) {
               linkedEntryIds.push(item.sys.id);
             }
           });
@@ -134,7 +133,7 @@ export class CopyEntryService {
 
     const content = this.getSavedEntry(entryId);
 
-    return await contentfulImport({
+    await contentfulImport({
       spaceId,
       environmentId,
       managementToken,
@@ -142,6 +141,8 @@ export class CopyEntryService {
       skipContentPublishing: true,
       skipEditorInterfaces: false,
     });
+
+    await this.updateCopyEntry({ entryId }, { imported: true });
   }
 
   getSavedEntry(entryId: string) {
