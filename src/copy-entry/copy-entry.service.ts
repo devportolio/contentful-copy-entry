@@ -23,7 +23,6 @@ export class CopyEntryService {
         await this.importContent({ ...copyEntryDto.import, entryId: id });
       }
 
-      //await Entry.update({  batchDone: true }, { where: { parentId: req.body.import.entryId } })
       await this.updateCopyEntry(
         { parentId: copyEntryDto.import.entryId },
         { batchDone: true },
