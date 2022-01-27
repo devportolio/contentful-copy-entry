@@ -7,21 +7,37 @@ import { readFileSync } from 'fs';
 
 import { CopyEntryDto, CopyUpdateDto, SourceDto } from './copy-entry.dto';
 import { CopyEntry } from './copy-entry.entity';
+import { SocketService } from '../socket/socket.service';
 
 @Injectable()
 export class CopyEntryService {
+  exporting = 0;
+  importing = 0;
+  entryId = '';
+
   constructor(
     @InjectRepository(CopyEntry)
-    private copyEntryRepository: Repository<CopyEntry>,
+    private readonly copyEntryRepository: Repository<CopyEntry>,
+    private readonly socketService: SocketService,
   ) {}
 
   async performCopy(copyEntryDto: CopyEntryDto) {
+    this.exporting = 0;
+    this.importing = 0;
+    this.entryId = copyEntryDto.import.entryId;
+
+    this.socketService.socket.emit('processing' + this.entryId, 'Processing');
+
     try {
       const exportedIds = await this.export(copyEntryDto.export);
+
+      this.socketService.socket.emit('exportDone' + this.entryId);
 
       for (const id of exportedIds) {
         await this.importContent({ ...copyEntryDto.import, entryId: id });
       }
+
+      this.socketService.socket.emit('importDone' + this.entryId);
 
       await this.updateCopyEntry(
         { parentId: copyEntryDto.import.entryId },
@@ -74,7 +90,14 @@ export class CopyEntryService {
       skipWebhooks: true,
       skipEditorInterfaces: true,
       useVerboseRenderer: true,
+      errorLogFile: 'errors',
       queryEntries: [`sys.id[in]=${entryId}`],
+    });
+
+    this.exporting++;
+    this.socketService.socket.emit('exporting' + this.entryId, {
+      total: this.exporting,
+      processed: this.importing,
     });
 
     return result.entries.length > 0
@@ -139,6 +162,13 @@ export class CopyEntryService {
       content,
       skipContentPublishing: true,
       skipEditorInterfaces: false,
+      errorLogFile: 'errors',
+    });
+
+    this.importing++;
+    this.socketService.socket.emit('importing' + this.entryId, {
+      total: this.exporting,
+      processed: this.importing,
     });
 
     await this.updateCopyEntry({ entryId }, { imported: true });
