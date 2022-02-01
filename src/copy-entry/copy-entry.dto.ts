@@ -1,13 +1,12 @@
-export interface SourceDto {
-  entryId: string;
+export interface EntryDto {
   spaceId: string;
   environmentId: string;
-  managementToken: string;
 }
 
 export interface CopyEntryDto {
-  import: SourceDto;
-  export: SourceDto;
+  entryId: string;
+  source: EntryDto;
+  destination: EntryDto;
 }
 
 export interface CopyUpdateDto {

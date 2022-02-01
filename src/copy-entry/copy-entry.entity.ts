@@ -1,6 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+} from 'typeorm';
 
-@Entity()
+@Entity({ name: 'copy_entries' })
 export class CopyEntry {
   @PrimaryGeneratedColumn('uuid')
   public id: string;
@@ -11,9 +16,29 @@ export class CopyEntry {
   @Column()
   parentId: string;
 
-  @Column({ default: false })
-  imported: boolean;
+  @Column()
+  sourceSpaceId: string;
 
-  @Column({ default: false })
-  batchDone: boolean;
+  @Column()
+  sourceEnvironmentId: string;
+
+  @Column()
+  destinationSpaceId: string;
+
+  @Column()
+  destinationEnvironmentId: string;
+
+  @Column({ type: 'timestamp', nullable: true, default: null })
+  dateCopied: Date;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  setDateCopied() {
+    this.dateCopied = new Date();
+  }
+
+  isCopied(): boolean {
+    return !!this.dateCopied;
+  }
 }
