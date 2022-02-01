@@ -34,10 +34,6 @@ export class CopyEntry {
   @CreateDateColumn()
   createdAt: Date;
 
-  setDateCopied() {
-    this.dateCopied = new Date();
-  }
-
   isCopied(): boolean {
     return !!this.dateCopied;
   }

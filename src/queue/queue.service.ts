@@ -51,4 +51,10 @@ export class QueueService {
 
     return queues.findIndex((queue) => queue.id === id) + 1;
   }
+
+  async incrementTotalByParentId(parentId: string) {
+    const queue = await this.queueRepository.findOne({ parentId });
+    queue.total++;
+    await this.queueRepository.save(queue);
+  }
 }

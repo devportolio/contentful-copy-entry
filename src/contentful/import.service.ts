@@ -35,7 +35,7 @@ export class ImportService {
       errorLogFile: 'errors',
     });
 
-    await this.copyEntryService.markAsCopied(copyEntry);
+    await this.copyEntryService.markAsCopied(entryId);
   }
 
   getSavedEntry(entryId: string) {

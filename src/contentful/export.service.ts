@@ -28,7 +28,12 @@ export class ExportService {
         if (!exportedIds.includes(id)) {
           const ids = await this.exportEntry(id, spaceId, environmentId);
 
-          await this.copyEntryService.create(copyEntryDto, id);
+          await this.copyEntryService.create(
+            { entryId: id, ...copyEntryDto },
+            entryId, // set parentId
+          );
+
+          await this.queueService.incrementTotalByParentId(entryId);
 
           exportedIds = [...new Set([id, ...exportedIds])];
           childEntryIds = [...ids, ...childEntryIds];
@@ -44,6 +49,8 @@ export class ExportService {
       spaceId,
       environmentId,
     );
+
+    await this.queueService.incrementTotalByParentId(entryId);
 
     do {
       // Export each entry
@@ -76,10 +83,6 @@ export class ExportService {
       errorLogFile: 'errors',
       queryEntries: [`sys.id[in]=${entryId}`],
     });
-
-    // Update queue by incrementing total
-
-    // Update copy entry and set
 
     return result.entries.length > 0
       ? this.getLinkedEntryIds(result.entries[0].fields)

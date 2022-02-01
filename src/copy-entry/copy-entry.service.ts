@@ -42,6 +42,8 @@ export class CopyEntryService {
     );
 
     await this.broadCastQueuePosition(queue);
+
+    await this.startCopying(copyEntryDto);
   }
 
   async startCopying(copyEntryDto: CopyEntryDto) {
@@ -97,14 +99,14 @@ export class CopyEntryService {
   }
 
   async getByEntryId(entryId: string): Promise<CopyEntry> {
-    return this.copyEntryRepository.findOne({ entryId });
+    return await this.copyEntryRepository.findOne({ entryId });
   }
 
-  async markAsCopied(copyEntry: CopyEntry) {
-    copyEntry.setDateCopied();
-    const { id, ...data } = copyEntry;
-
-    await this.copyEntryRepository.update({ id }, data);
+  async markAsCopied(entryId: string) {
+    await this.copyEntryRepository.update(
+      { entryId },
+      { dateCopied: new Date() },
+    );
   }
 
   async broadCastQueuePosition(queue: Queue) {

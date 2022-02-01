@@ -16,6 +16,7 @@ export class TaskService {
   async handleCron() {
     const queue = await this.queueService.getProcessing();
 
+    return;
     if (!this.isProcessing && queue) {
       this.isProcessing = true;
 
@@ -24,7 +25,7 @@ export class TaskService {
       );
 
       if (!copyEntry) {
-        this.isProcessing = false;
+        // this.isProcessing = false;
         return;
       }
 
@@ -51,7 +52,7 @@ export class TaskService {
         await this.copyEntryService.broadcastEachPosition();
       }
 
-      this.isProcessing = false;
+      //  this.isProcessing = false;
     }
   }
 }
