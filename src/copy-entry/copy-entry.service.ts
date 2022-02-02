@@ -10,6 +10,7 @@ import { ExportService } from '../contentful/export.service';
 import { ImportService } from 'src/contentful/import.service';
 import { QueueDto } from '../queue/queue.dto';
 import { Queue } from '../queue/queue.entity';
+import { EventType } from './copy-entry.enum';
 
 @Injectable()
 export class CopyEntryService {
@@ -37,30 +38,29 @@ export class CopyEntryService {
     }
 
     // Add item to queue
-    const queue = await this.queueService.addItem(
-      new QueueDto(copyEntryDto.entryId),
-    );
+    await this.queueService.addItem(new QueueDto(entryId));
 
-    await this.broadCastQueuePosition(queue);
-
-    await this.startCopying(copyEntryDto);
+    await this.broadcastQueuePosition(entryId);
   }
 
   async startCopying(copyEntryDto: CopyEntryDto) {
     const { entryId, destination } = copyEntryDto;
 
-    this.socketService.socket.emit('processing' + entryId);
+    this.socketService.socket.emit(EventType.PROCESSING + entryId);
 
     try {
       const exportedIds = await this.exportService.run(copyEntryDto);
 
-      this.socketService.socket.emit('exportDone' + entryId);
+      this.socketService.socket.emit(EventType.EXPORT_DONE + entryId);
 
       for (const id of exportedIds) {
         await this.importService.run(id, destination);
+        await this.queueService.incrementProcessedByParentId(entryId);
+        await this.broadcastQueue(EventType.IMPORTING);
       }
 
-      this.socketService.socket.emit('importDone' + entryId);
+      this.socketService.socket.emit(EventType.IMPORT_DONE + entryId);
+      await this.broadcastCopyStatus(entryId);
 
       return true;
     } catch (e) {
@@ -109,23 +109,50 @@ export class CopyEntryService {
     );
   }
 
-  async broadCastQueuePosition(queue: Queue) {
-    const { parentId: entryId, id } = queue;
+  async broadcastQueuePosition(entryId: string) {
+    const queue = await this.queueService.getByParentId(entryId);
+
+    if (!queue) {
+      return;
+    }
 
     // Get positions
-    const position = await this.queueService.getPosition(id);
+    const position = await this.queueService.getPosition(queue.id);
 
-    this.socketService.socket.emit('itemQueued' + entryId, {
+    this.socketService.socket.emit(EventType.ITEM_QUEUED + entryId, {
       position,
     });
   }
 
   async broadcastEachPosition() {
-    // Get all queue items
+    // Get all queue items except
     const queues = await this.queueService.getAllItems();
 
     for (const queue of queues) {
-      await this.broadCastQueuePosition(queue);
+      await this.broadcastQueuePosition(queue.parentId);
     }
+  }
+
+  async broadcastQueue(eventType: EventType) {
+    const queue = await this.queueService.getProcessing();
+
+    if (!queue) {
+      return;
+    }
+
+    const { total, processed, parentId } = queue;
+    this.socketService.socket.emit(eventType + parentId, { total, processed });
+  }
+
+  async broadcastCopyStatus(entryId: string) {
+    const copyEntry = await this.getByEntryId(entryId);
+    const data = { done: false, date: null };
+
+    if (copyEntry) {
+      data.done = copyEntry.isCopied();
+      data.date = copyEntry.getFormattedDateCopied();
+    }
+
+    this.socketService.socket.emit(EventType.COPIED_STATUS + entryId, data);
   }
 }

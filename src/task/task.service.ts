@@ -16,43 +16,36 @@ export class TaskService {
   async handleCron() {
     const queue = await this.queueService.getProcessing();
 
-    return;
     if (!this.isProcessing && queue) {
       this.isProcessing = true;
 
+      // Get the parent entry
       const copyEntry = await this.copyEntryService.getCopyEntry(
         queue.parentId,
       );
 
       if (!copyEntry) {
-        // this.isProcessing = false;
+        this.isProcessing = false;
         return;
       }
 
-      const copyEntryDto = {
-        entryId: copyEntry.entryId,
-        source: {
-          spaceId: copyEntry.sourceSpaceId,
-          environmentId: copyEntry.sourceEnvironmentId,
-        },
-        destination: {
-          spaceId: copyEntry.destinationSpaceId,
-          environmentId: copyEntry.destinationEnvironmentId,
-        },
-      };
-
       // run copy functionality
-      const isDone = await this.copyEntryService.startCopying(copyEntryDto);
+      const isDone = await this.copyEntryService.startCopying(
+        copyEntry.getDto(),
+      );
 
       if (isDone) {
         // Delete queue if it's done processing
         await this.queueService.removeById(queue.id);
 
+        // Set next queue
+        await this.queueService.setNextProcessing();
+
         // Broadcast all queue positions
         await this.copyEntryService.broadcastEachPosition();
       }
 
-      //  this.isProcessing = false;
+      this.isProcessing = false;
     }
   }
 }

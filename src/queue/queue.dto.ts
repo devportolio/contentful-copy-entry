@@ -6,3 +6,8 @@ export class QueueDto {
   readonly parentId: string;
   public processing = false;
 }
+
+export interface queueStatusDto {
+  total: number;
+  processed: number;
+}

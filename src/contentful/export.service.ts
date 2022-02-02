@@ -4,6 +4,7 @@ import { QueueService } from 'src/queue/queue.service';
 
 import { CopyEntryDto } from '../copy-entry/copy-entry.dto';
 import { CopyEntryService } from '../copy-entry/copy-entry.service';
+import { EventType } from '../copy-entry/copy-entry.enum';
 
 @Injectable()
 export class ExportService {
@@ -28,15 +29,22 @@ export class ExportService {
         if (!exportedIds.includes(id)) {
           const ids = await this.exportEntry(id, spaceId, environmentId);
 
-          await this.copyEntryService.create(
-            { entryId: id, ...copyEntryDto },
+          const isCreated = await this.copyEntryService.create(
+            { ...copyEntryDto, entryId: id },
             entryId, // set parentId
           );
 
-          await this.queueService.incrementTotalByParentId(entryId);
+          // Trigger only if a new entry was created.
+          if (isCreated) {
+            await this.queueService.incrementTotalByParentId(entryId);
+            await this.copyEntryService.broadcastQueue(EventType.EXPORTING);
 
-          exportedIds = [...new Set([id, ...exportedIds])];
-          childEntryIds = [...ids, ...childEntryIds];
+            // merge and remove duplicates
+            exportedIds = [...new Set([id, ...exportedIds])];
+          }
+
+          // merge and remove duplicates
+          childEntryIds = [...new Set([...ids, ...childEntryIds])];
         }
       }
 
@@ -54,8 +62,8 @@ export class ExportService {
 
     do {
       // Export each entry
-      linkedEntryIds = await runExportChildrenExport(linkedEntryIds);
       // receives ids of the children of the next level parent
+      linkedEntryIds = await runExportChildrenExport(linkedEntryIds);
     } while (linkedEntryIds.length > 0);
 
     return exportedIds;

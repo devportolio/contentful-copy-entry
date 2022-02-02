@@ -8,8 +8,3 @@ export interface CopyEntryDto {
   source: EntryDto;
   destination: EntryDto;
 }
-
-export interface CopyUpdateDto {
-  total: number;
-  processed: number;
-}

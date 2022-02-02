@@ -35,7 +35,14 @@ export class SocketGateway
     console.log(`Client disconnected: ${client.id}`);
   }
 
-  handleConnection(client: Socket, ...args: any[]) {
+  async handleConnection(client: Socket, ...args: any[]) {
     console.log(`Client connected: ${client.id}`);
+
+    const entryId: any = client.handshake.query.entryId;
+
+    if (entryId) {
+      await this.copyEntryService.broadcastQueuePosition(entryId);
+      await this.copyEntryService.broadcastCopyStatus(entryId);
+    }
   }
 }

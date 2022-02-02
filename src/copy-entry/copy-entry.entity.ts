@@ -4,6 +4,8 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
 } from 'typeorm';
+import { CopyEntryDto } from './copy-entry.dto';
+import { dateFormat } from '../app.utilities';
 
 @Entity({ name: 'copy_entries' })
 export class CopyEntry {
@@ -36,5 +38,23 @@ export class CopyEntry {
 
   isCopied(): boolean {
     return !!this.dateCopied;
+  }
+
+  getFormattedDateCopied() {
+    return dateFormat(this.dateCopied, '%d/%m/%Y %H:%M');
+  }
+
+  getDto(): CopyEntryDto {
+    return {
+      entryId: this.entryId,
+      source: {
+        spaceId: this.sourceSpaceId,
+        environmentId: this.sourceEnvironmentId,
+      },
+      destination: {
+        spaceId: this.destinationSpaceId,
+        environmentId: this.destinationEnvironmentId,
+      },
+    };
   }
 }
