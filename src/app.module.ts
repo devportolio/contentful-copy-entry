@@ -1,20 +1,31 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { CopyEntryModule } from './copy-entry/copy-entry.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
+
+import { SocketModule } from './socket/socket.module';
+import { AppService } from './app.service';
+import { TaskModule } from './task/task.module';
 
 @Module({
   imports: [
-    CopyEntryModule,
+    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
-      type: 'sqlite',
-      database: 'db.sqlite',
+      type: 'mysql',
+      host: 'localhost',
+      port: 3306,
+      username: 'root',
+      password: 'root',
+      database: 'copy-entry',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
     }),
+    SocketModule,
+    CopyEntryModule,
+    TaskModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [SocketModule, AppService],
+  exports: [SocketModule],
 })
 export class AppModule {}
